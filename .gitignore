@@ -1,0 +1,6 @@
+# .gitignore
+venv/
+*.dll
+*.exe
+*.lib
+*.pyd
