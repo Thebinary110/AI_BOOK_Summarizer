@@ -1,0 +1,10 @@
+transformers
+torch
+streamlit
+pyngrok
+textwrap
+chromadb
+openai
+playwright
+pyttsx3
+uuid
