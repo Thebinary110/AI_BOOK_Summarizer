@@ -1,6 +1,49 @@
-# .gitignore
+
+# э║л Virtual environments
 venv/
+.env/
+
+# э░Н Python cache files
+__pycache__/
+*.py[cod]
+*.so
+
+# э▓е Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# э╖к Test outputs
+*.log
+
+# э│ж Python distribution packages
+*.egg
+*.egg-info/
+dist/
+build/
+*.whl
+
+# тЪая╕П Compiled binaries
 *.dll
 *.exe
 *.lib
 *.pyd
+*.obj
+
+# э│╕ Image/model artifacts
+*.png
+*.jpg
+*.jpeg
+*.h5
+*.pt
+*.ckpt
+*.tflite
+*.onnx
+*.pb
+
+# э╝Н System files
+.DS_Store
+Thumbs.db
+
+# э┤Р Environment secrets
+*.env
+.env.*
+
