@@ -1,12 +1,14 @@
-from playwright.sync_api import sync_playwright
+import subprocess
 
-def fetch_chapter(url: str) -> str:
-    with sync_playwright() as p:
-        browser = p.chromium.launch()
-        page = browser.new_page()
-        page.goto(url)
-        content = page.content()
-        text = page.inner_text('body')
-        screenshot = page.screenshot(path="chapter.png")
-        browser.close()
-    return text
+def fetch_chapter(url):
+    # Use curl or requests as fallback since Playwright subprocess fails
+    try:
+        import requests
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+        }
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+        return response.text
+    except Exception as e:
+        return f"[ERROR] Could not fetch URL: {e}"

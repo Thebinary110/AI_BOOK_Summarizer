@@ -1,8 +1,6 @@
-transformers
-torch
+transformers==4.41.2
+torch>=2.0.1
 streamlit
-pyngrok
-textwrap
 chromadb
 openai
 playwright

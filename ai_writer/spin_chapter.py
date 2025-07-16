@@ -1,33 +1,27 @@
-from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
-import torch
-import textwrap
+import google.generativeai as genai
 
-def chunk_text(text, max_tokens=800):
-    return textwrap.wrap(text, max_tokens, break_long_words=False, replace_whitespace=False)
+# Your API key (ensure it's securely stored in real projects)
+genai.configure(api_key="AIzaSyAxa2W7PU9N_nAOW0wGq1tuNYaoDT5wluM")
 
-def spin_chapter(content):
-    model_name = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForCausalLM.from_pretrained(
-        model_name,
-        device_map="auto",
-        torch_dtype=torch.float16,
-        load_in_4bit=False
-    )
-    pipe = pipeline("text-generation", model=model, tokenizer=tokenizer)
+def spin_chapter(text):
+    try:
+        model = genai.GenerativeModel("gemini-1.5-flash")
 
-    chunks = chunk_text(content)
-    spun_output = []
-
-    for chunk in chunks:
         prompt = f"""
-You are a professional writer. Rewrite the passage in your own words, keeping the meaning, tone, and events unchanged.
-ORIGINAL:
-{chunk}
-PARAPHRASED:
-"""
-        result = pipe(prompt, max_new_tokens=512, temperature=0.7, do_sample=True)[0]['generated_text']
-        rewritten = result.split("PARAPHRASED:")[-1].strip()
-        spun_output.append("\n".join(dict.fromkeys(rewritten.splitlines())))
+You are a creative and experienced book editor.
+Rewrite the following chapter using fresh sentence structures, enhanced vocabulary, and natural flow.
+Preserve the original meaning, tone, characters, and storyline.
+Do not add page numbers or any metadata.
+Keep the rewritten content human-readable, fluent, and logically cohesive.
 
-    return "\n\n".join(spun_output)
+### Chapter to Rewrite:
+{text}
+
+### Rewritten Chapter:
+"""
+
+        response = model.generate_content(prompt)
+        return response.text
+
+    except Exception as e:
+        return f"❌ Error during spinning: {str(e)}"
