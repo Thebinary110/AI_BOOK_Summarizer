@@ -11,7 +11,7 @@ def spin_chapter(text):
 You are a creative and experienced book editor.
 Rewrite the following chapter using fresh sentence structures, enhanced vocabulary, and natural flow.
 Preserve the original meaning, tone, characters, and storyline.
-Do not add page numbers or any metadata.
+Do not add page numbers or any metadata and at the last write the name of the novelist or the author.
 Keep the rewritten content human-readable, fluent, and logically cohesive.
 
 ### Chapter to Rewrite:
