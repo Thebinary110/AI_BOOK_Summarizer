@@ -3,7 +3,7 @@ from ai_writer.spin_chapter import spin_chapter
 from ai_writer.ai_review import ai_review
 from versioning.chromadb_handler import VersionManager
 from human_loop.rl_feedback import calculate_reward
-from scraping.playwright_scraper import fetch_chapter
+from scraping.playwright_scraper import fetch_chapter, fetch_chapter_simple, fetch_chapter_playwright
 import time
 
 vm = VersionManager()
@@ -29,14 +29,56 @@ with tabs[0]:
             st.text_area("File Content:", raw_text, height=300)
     elif input_type == "🔗 URL":
         url = st.text_input("Enter the URL:")
+        
+        # Add scraper method selection
+        scraper_method = st.selectbox(
+            "Choose scraping method:", 
+            ["🎭 Playwright (Full Browser)", "🌐 Simple HTTP (Fast)", "🔧 Auto (Try Both)"],
+            key="scraper_method"
+        )
+        
         if url and st.button("🔍 Fetch Content"):
-            raw_text = fetch_chapter(url)
-            st.session_state["fetched_text"] = raw_text
+            with st.spinner("Fetching content from URL... This may take a moment..."):
+                try:
+                    if scraper_method == "🎭 Playwright (Full Browser)":
+                        # Use only Playwright
+                        st.info("🎭 Using Playwright to fetch content...")
+                        raw_text = fetch_chapter_playwright(url)
+                    elif scraper_method == "🌐 Simple HTTP (Fast)":
+                        # Use only simple HTTP
+                        st.info("🌐 Using simple HTTP to fetch content...")
+                        raw_text = fetch_chapter_simple(url)
+                    else:
+                        # Auto mode - try both with automatic fallback
+                        st.info("🔧 Using auto mode - trying best method...")
+                        raw_text = fetch_chapter(url)
+                    
+                    st.session_state["fetched_text"] = raw_text
+                    
+                    if raw_text.startswith("Error:"):
+                        st.error(raw_text)
+                    else:
+                        st.success("✅ Content fetched successfully!")
+                        
+                except Exception as e:
+                    st.error(f"❌ Error fetching content: {str(e)}")
+                    # Final fallback
+                    st.info("🔄 Trying simple HTTP as final fallback...")
+                    try:
+                        raw_text = fetch_chapter_simple(url)
+                        st.session_state["fetched_text"] = raw_text
+                        if not raw_text.startswith("Error:"):
+                            st.success("✅ Content fetched with fallback method!")
+                    except Exception as e2:
+                        st.error(f"❌ All scraping methods failed: {str(e2)}")
+        
         raw_text = st.session_state.get("fetched_text", "")
-        if raw_text:
+        if raw_text and not raw_text.startswith("Error:"):
             st.text_area("Fetched Content:", raw_text, height=300)
+        elif raw_text and raw_text.startswith("Error:"):
+            st.error(raw_text)
 
-    if raw_text and st.button("🔁 Spin Chapter"):
+    if raw_text and not raw_text.startswith("Error:") and st.button("🔁 Spin Chapter"):
         with st.spinner("Spinning chapter..."):
             try:
                 spun_output = spin_chapter(raw_text)
@@ -84,8 +126,11 @@ with tabs[2]:
     if st.button("💾 Save Version"):
         if chapter_title and author and final_content:
             with st.spinner("Saving..."):
-                vm.add_version(chapter_title, final_content, author)
-                st.success("✅ Version Saved")
+                try:
+                    vm.add_version(chapter_title, final_content, author)
+                    st.success("✅ Version Saved")
+                except Exception as e:
+                    st.error(f"❌ Error saving version: {e}")
         else:
             st.warning("⚠️ Please fill in all fields.")
 
@@ -94,13 +139,19 @@ with tabs[3]:
     st.header("Version History")
     if st.button("🔍 Load Versions"):
         with st.spinner("Loading..."):
-            versions = vm.show_all_versions()
-            for v in versions:
-                st.markdown(f"**Chapter**: {v['chapter']}")
-                st.markdown(f"**Author**: {v['author']}")
-                st.markdown(f"**Timestamp**: {v['timestamp']}")
-                st.code(v['content'], language='markdown')
-                st.markdown("---")
+            try:
+                versions = vm.show_all_versions()
+                if versions:
+                    for i, v in enumerate(versions):
+                        with st.expander(f"Version {i+1}: {v.get('chapter', 'Unknown Chapter')}"):
+                            st.markdown(f"**Chapter**: {v.get('chapter', 'N/A')}")
+                            st.markdown(f"**Author**: {v.get('author', 'N/A')}")
+                            st.markdown(f"**Timestamp**: {v.get('timestamp', 'N/A')}")
+                            st.code(v.get('content', 'No content'), language='markdown')
+                else:
+                    st.info("📝 No versions found. Save some chapters first!")
+            except Exception as e:
+                st.error(f"❌ Error loading versions: {e}")
 
 # ---------- Tab 5: Human Edit + RL ----------
 with tabs[4]:
@@ -111,14 +162,29 @@ with tabs[4]:
     edit_count = st.number_input("Number of edits made", min_value=0, step=1)
 
     if st.button("📤 Submit Feedback"):
-        accepted = feedback_choice == "👍 Yes"
-        reward = calculate_reward(edit_count, similarity_score, accepted)
-        st.success(f"✅ Reward Score Computed: **{reward}**")
+        try:
+            accepted = feedback_choice == "👍 Yes"
+            reward = calculate_reward(edit_count, similarity_score, accepted)
+            st.success(f"✅ Reward Score Computed: **{reward}**")
+        except Exception as e:
+            st.error(f"❌ Error calculating reward: {e}")
 
 # ---------- Tab 6: Voice Assistant ----------
 with tabs[5]:
     st.header("🎤 Voice Interface (Coming Soon)")
     st.info("Voice commands & TTS will be added in a future version.")
+
+# Add some debugging info in the sidebar
+with st.sidebar:
+    st.header("🔧 Debug Info")
+    st.info("If URL scraping fails, try switching between Playwright and Simple HTTP methods.")
+    
+    # Clear session state button
+    if st.button("🗑️ Clear Session"):
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
+        st.success("Session cleared!")
+        st.rerun()
 
 st.markdown("---")
 st.markdown("🚀 Built by Shhaurya Jaiswal | Powered by Streamlit + Transformers + ChromaDB")
