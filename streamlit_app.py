@@ -7,6 +7,8 @@ from scraping.playwright_scraper import fetch_chapter, fetch_chapter_simple, fet
 import time
 import fitz  # PyMuPDF
 import base64
+import pytesseract
+from PIL import Image
 
 vm = VersionManager()
 
@@ -32,7 +34,7 @@ def download_button(content, filename="spun_chapter.txt"):
 with tabs[0]:
     st.header("Spin a Raw Chapter with LLM")
 
-    input_type = st.selectbox("Input Type", ["📝 Paste Text", "📄 Upload File (.txt/.pdf)", "🔗 URL"], key="spin_type")
+    input_type = st.selectbox("Input Type", ["📝 Paste Text", "📄 Upload File (.txt/.pdf)", "🔗 URL", "🖼️ Image Upload"], key="spin_type")
     raw_text = ""
 
     if input_type == "📝 Paste Text":
@@ -80,6 +82,18 @@ with tabs[0]:
         raw_text = st.session_state.get("fetched_text", "")
         if raw_text and not raw_text.startswith("Error:"):
             st.text_area("Fetched Content:", raw_text, height=300)
+
+    elif input_type == "🖼️ Image Upload":
+        image_file = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
+        if image_file:
+            st.image(image_file, caption="📷 Uploaded Image", use_column_width=True)
+            image = Image.open(image_file)
+            try:
+                raw_text = pytesseract.image_to_string(image)
+                st.success("✅ Text extracted from image!")
+                st.text_area("Extracted Text:", raw_text, height=300)
+            except Exception as e:
+                st.error(f"❌ OCR failed: {str(e)}")
 
     if raw_text and not raw_text.startswith("Error:") and st.button("🔁 Spin Chapter"):
         with st.spinner("Spinning chapter..."):

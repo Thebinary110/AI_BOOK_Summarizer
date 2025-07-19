@@ -8,10 +8,11 @@ def spin_chapter(text):
         model = genai.GenerativeModel("gemini-1.5-flash")
 
         prompt = f"""
+        author name here .
 You are a creative and experienced book editor.
 Rewrite the following chapter using fresh sentence structures, enhanced vocabulary, and natural flow.
 Preserve the original meaning, tone, characters, and storyline.
-Do not add page numbers or any metadata and at the last write the name of the novelist or the author.
+Do not add page numbers or any metadata.
 Keep the rewritten content human-readable, fluent, and logically cohesive.
 
 ### Chapter to Rewrite:
